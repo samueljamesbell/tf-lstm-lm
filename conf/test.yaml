@@ -6,6 +6,7 @@ lstm:
     hidden_dims: 300
     num_layers: 2
     init_scale: 0.05
+    max_gradient_norm: 5
     dropout:
         keep_prob: 0.6
 

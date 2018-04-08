@@ -1,0 +1,22 @@
+data:
+    batch_size: 20
+    num_steps: 35
+
+lstm:
+    hidden_dims: 300
+    num_layers: 2
+    init_scale: 0.05
+    max_gradient_norm: 5
+    dropout:
+        keep_prob: 0.5
+
+training:
+    num_epochs: 40
+    terminate_after: 8
+    learning_rate_decay: 0.8
+    decay_after: 6
+
+vocab:
+    max_size: 10000
+    rare_word_threshold: 1
+

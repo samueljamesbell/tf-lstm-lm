@@ -365,7 +365,7 @@ def _main():
             hidden_dims=config['lstm']['hidden_dims'],
             num_layers=config['lstm']['num_layers'],
             dropout_keep_prob=config['lstm']['dropout']['keep_prob'],
-            dropout_keep_prob=config['lstm']['max_gradient_norm'])
+            max_gradient_norm=config['lstm']['max_gradient_norm'])
 
     training_data = v.to_ids(training_data)
     dev_data = v.to_ids(dev_data)

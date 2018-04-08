@@ -1,0 +1,14 @@
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Pipenv
+__pycache__/*
+
+# Large binaries
+data/*
+embeddings/*
+models/*
+tmp/*

@@ -3,17 +3,18 @@ data:
     num_steps: 35
 
 lstm:
-    hidden_dims: 650
+    hidden_dims: 1500
     num_layers: 2
-    init_scale: 0.05
+    init_scale: 0.04
+    max_gradient_norm: 10
     dropout:
-        keep_prob: 0.5
+        keep_prob: 0.35
 
 training:
-    num_epochs: 40
+    num_epochs: 55
     terminate_after: 8
-    learning_rate_decay: 0.8
-    decay_after: 6
+    learning_rate_decay: 0.87
+    decay_after: 14
 
 vocab:
     max_size: 10000

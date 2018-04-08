@@ -111,7 +111,8 @@ class LanguageModel(object):
         self.learning_rate = None
         self.optimise = None
 
-    def construct_network(self, hidden_dims, num_layers, dropout_keep_prob):
+    def construct_network(self, hidden_dims, num_layers, dropout_keep_prob,
+                          max_gradient_norm):
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
 
         # (batch size x num steps)
@@ -184,7 +185,8 @@ class LanguageModel(object):
 
         self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
         tvars = tf.trainable_variables()
-        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars), 5)
+        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars),
+                                          max_gradient_norm)
         optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
         self.optimise = optimizer.apply_gradients(
                 zip(grads, tvars),
@@ -362,7 +364,8 @@ def _main():
     lm.construct_network(
             hidden_dims=config['lstm']['hidden_dims'],
             num_layers=config['lstm']['num_layers'],
-            dropout_keep_prob=config['lstm']['dropout']['keep_prob'])
+            dropout_keep_prob=config['lstm']['dropout']['keep_prob'],
+            dropout_keep_prob=config['lstm']['max_gradient_norm'])
 
     training_data = v.to_ids(training_data)
     dev_data = v.to_ids(dev_data)

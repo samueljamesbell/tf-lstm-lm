@@ -19,9 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 # TODO:
 # -----
-# Toggle between fw/bw LSTM
-# Output probabilities / how to get hidden state out
+# Toggle LSTM direction (forward or backward)
+# Annotate with more than just final LSTM output layer
 # Clean up session management
+# Clean up loading and saving - it probably should need two files, two args, etc.
 
 
 def _parse_args():

@@ -236,8 +236,8 @@ class LanguageModel(object):
 
             cost += c
             iters += self.num_steps
-
-        return cost / iters, np.concatenate(top_layers, axis=0)
+        
+        return cost / iters, top_layers
 
 
 def _train(lm, x, y, save_path=None, num_epochs=10, terminate_after=5,
@@ -293,7 +293,7 @@ def _annotate(lm, x, y):
     loss, top_layers = lm.run_epoch(x, y)
     logger.info('Perplexity: %f', _perplexity(loss))
 
-    return top_layers
+    return np.concatenate(top_layers, axis=0)
     
 
 def _main():

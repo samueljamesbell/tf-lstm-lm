@@ -5,15 +5,15 @@
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
-            "implementation_version": "3.6.4",
+            "implementation_version": "3.5.4",
             "os_name": "posix",
             "platform_machine": "x86_64",
             "platform_python_implementation": "CPython",
             "platform_release": "15.6.0",
             "platform_system": "Darwin",
             "platform_version": "Darwin Kernel Version 15.6.0: Tue Jan  9 20:12:05 PST 2018; root:xnu-3248.73.5~1/RELEASE_X86_64",
-            "python_full_version": "3.6.4",
-            "python_version": "3.6",
+            "python_full_version": "3.5.4",
+            "python_version": "3.5",
             "sys_platform": "darwin"
         },
         "pipfile-spec": 6,
@@ -72,10 +72,10 @@
         },
         "ipython": {
             "hashes": [
-                "sha256:938da96f2f5f50d82add1947958b7432e9f330cef7703210bffd1a783d7720ab",
-                "sha256:c785ab502b1a63624baeb89fedb873a118d4da6c9a796ae06e4f4aaef74e9ea0"
+                "sha256:85882f97d75122ff8cdfe129215a408085a26039527110c8d4a2b8a5e45b7639",
+                "sha256:a6ac981381b3f5f604b37a293369963485200e3639fb0404fa76092383c10c41"
             ],
-            "version": "==6.3.0"
+            "version": "==6.3.1"
         },
         "ipython-genutils": {
             "hashes": [
@@ -343,7 +343,6 @@
                 "sha256:9cdc8ab2cc9c3c2e2727a4b67c22881dbb0e1c503d592992594c5e131c867107",
                 "sha256:1ae8153bed701cb062913b72429bcf854ba824f973735427681882a688cb55ce"
             ],
-            "markers": "python_version >= '3'",
             "version": "==0.31.0"
         }
     },

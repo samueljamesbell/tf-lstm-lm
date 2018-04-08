@@ -141,10 +141,17 @@ class LanguageModel(object):
         # ((batch size * num steps) x hidden dims) 
         output_tensor = tf.reshape(tf.concat(outputs, 1), [-1, hidden_dims])
         self.top_layer = output_tensor
+
+        # Temporarily trying out projection with xw+b instead of dense layer
+        softmax_w = tf.get_variable("softmax_w", [hidden_dims, self.vocab_size],
+                                    dtype=tf.float32)
+        softmax_b = tf.get_variable("softmax_b", [self.vocab_size],
+                                    dtype=tf.float32)
+        logits = tf.nn.xw_plus_b(output_tensor, softmax_w, softmax_b)
         
-        # ((batch size * num steps) x vocab) 
-        logits = tf.layers.dense(output_tensor, self.vocab_size,
-                                 name='project_onto_vocab')
+#        # ((batch size * num steps) x vocab) 
+#        logits = tf.layers.dense(output_tensor, self.vocab_size,
+#                                 name='project_onto_vocab')
 
         # (batch size x num steps x vocab)
         logits = tf.reshape(logits, [self.batch_size, self.num_steps, self.vocab_size])

@@ -29,6 +29,9 @@ def write_file(path, pairs, rows, dimensions):
 
     with open(path, 'w') as f:
         for i, (t, c) in enumerate(pairs):
-            row = rows[i] if i < num_rows else empty
-            joined = '\t'.join(row.astype(str))
-            f.write('{}\t{}\t{}\n'.format(t, joined, c))
+            if t.strip() and c.strip():
+                row = rows[i] if i < num_rows else empty
+                joined = '\t'.join(row.astype(str))
+                f.write('{}\t{}\t{}\n'.format(t.strip(), joined, c.strip()))
+            else:
+                f.write()

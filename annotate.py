@@ -29,7 +29,7 @@ def write_file(path, pairs, rows, dimensions):
 
     with open(path, 'w') as f:
         for i, (t, c) in enumerate(pairs):
-            if t.strip() and c.strip():
+            if t and c and t.strip() and c.strip():
                 row = rows[i] if i < num_rows else empty
                 joined = '\t'.join(row.astype(str))
                 f.write('{}\t{}\t{}\n'.format(t.strip(), joined, c.strip()))

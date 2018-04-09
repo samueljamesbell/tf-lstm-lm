@@ -34,4 +34,4 @@ def write_file(path, pairs, rows, dimensions):
                 joined = '\t'.join(row.astype(str))
                 f.write('{}\t{}\t{}\n'.format(t.strip(), joined, c.strip()))
             else:
-                f.write()
+                f.write('')

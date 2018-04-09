@@ -32,6 +32,6 @@ def write_file(path, pairs, rows, dimensions):
             if t and c and t.strip() and c.strip():
                 row = rows[i] if i < num_rows else empty
                 joined = '\t'.join(row.astype(str))
-                f.write('{}\t{}\t{}\n'.format(t.strip(), joined, c.strip()))
+                f.write('{}\t{}\t{}\n'.format(t.strip(), c.strip(), joined))
             else:
-                f.write('')
+                f.write('\n')

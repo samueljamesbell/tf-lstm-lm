@@ -1,4 +1,5 @@
 import collections
+import itertools
 import logging
 import pickle
 
@@ -8,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 _UNKNOWN = '<unk>'
+_MAX_TOKENS_TO_CONSIDER = 100000
 
 
 class Vocabulary(object):
@@ -24,13 +26,13 @@ class Vocabulary(object):
         return token in self._vocab
 
     def build(self, tokens, max_size=None, rare_threshold=0):
-        logger.info('Building vocab from %d tokens', len(tokens))
+        logger.info('Building vocab')
 
         def _unk(token, count):
             """Replace a token by unk if count is below threshold."""
             return token if count > rare_threshold else _UNKNOWN
 
-        c = collections.Counter(tokens)
+        c = collections.Counter(list(itertools.islice(tokens, _MAX_TOKENS_TO_CONSIDER)))
         self._vocab = {_unk(t, c): i for i, (t, c) in enumerate(c.most_common(max_size))}
         # Force unk to be in vocab if not already
         if _UNKNOWN not in self._vocab:
@@ -62,10 +64,13 @@ class Vocabulary(object):
         return self._vocab_inverse[id]
 
     def to_ids(self, tokens):
-        return [self.to_id(t) for t in tokens]
+        if not tokens:
+            return None
+
+        return (self.to_id(t) for t in tokens)
 
     def to_tokens(self, ids):
-        return [self.to_token(id) for id in ids]
+        return (self.to_token(id) for id in ids)
 
 
 def _inverse(d):

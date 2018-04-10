@@ -1,4 +1,6 @@
 import argparse
+import glob
+import itertools
 import logging
 import math
 import random
@@ -60,6 +62,12 @@ def _parse_args():
         # Gotcha: args.test is False if --test is unset, and None if --test is
         # set without an argument.
         parser.error('Must specify a test file if testing without training')
+
+    if args.train and len(glob.glob(args.train[0])) != 1 and args.test is None:
+        parser.error('Cannot perform train/test split when streaming')
+
+    if args.train and len(glob.glob(args.train[0])) != 1 and args.validate is None:
+        parser.error('Cannot perform train/dev split when streaming')
 
     return args
 
@@ -232,16 +240,16 @@ class LanguageModel(object):
 
         return cost, final_state, top_layer
 
-    def run_epoch(self, x, y, learning_rate=1.0, is_training=False):
+    def run_epoch(self, x_y, learning_rate=1.0, is_training=False):
         state = self.session.run(self.initial_state)
 
         cost = 0.0
         iters = 0
         top_layers = []
-        for batch_index in range(x.shape[0]):
+        for x_batch, y_batch in x_y:
             feed = {
-                self.word_ids: x[batch_index],
-                self.label_ids: y[batch_index],
+                self.word_ids: x_batch,
+                self.label_ids: y_batch,
                 self.learning_rate: learning_rate,
                 self.is_training: is_training,
             }
@@ -259,25 +267,28 @@ class LanguageModel(object):
         return cost / iters, top_layers
 
 
-def _train(lm, x, y, x_dev=None, y_dev=None, save_path=None,
+def _train(lm, train_x_y, dev_x_y=None, save_path=None,
            num_epochs=10, terminate_after=5, learning_rate_decay=1.0, decay_after=None):
     logger.info('Training...')
     best_epoch = 0
     best_epoch_score = math.inf
     num_epochs_without_improvement = 0
     for epoch in range(num_epochs):
+        train_x_y, train_x_y_actual = itertools.tee(train_x_y)
+        dev_x_y, dev_x_y_actual = itertools.tee(dev_x_y) if dev_x_y else (None, None)
+
         logger.info('Epoch: %d', epoch)
 
         # Assume an initial learning rate of 1.0, implicit in this calculation
         learning_rate = learning_rate_decay ** max(epoch + 1 - decay_after, 0.0)
         logger.info('Learning rate: %f', learning_rate)
 
-        loss, _ = lm.run_epoch(x, y, learning_rate=learning_rate, is_training=True)
+        loss, _ = lm.run_epoch(train_x_y_actual, learning_rate=learning_rate, is_training=True)
         perplexity = _perplexity(loss)
         logger.info('Training perplexity: %f', perplexity)
 
-        if x_dev is not None and y_dev is not None:
-            loss, _ = lm.run_epoch(x_dev, y_dev, is_training=False)
+        if dev_x_y:
+            loss, _ = lm.run_epoch(dev_x_y_actual, is_training=False)
             logger.info('Validation perplexity: %f', _perplexity(loss))
 
         if perplexity - best_epoch_score < -1:
@@ -297,17 +308,17 @@ def _train(lm, x, y, x_dev=None, y_dev=None, save_path=None,
             break
 
 
-def _test(lm, x, y):
+def _test(lm, x_y):
     logger.info('Testing...')
 
-    loss, _ = lm.run_epoch(x, y, is_training=False)
+    loss, _ = lm.run_epoch(x_y, is_training=False)
     logger.info('Perplexity: %f', _perplexity(loss))
 
 
-def _annotate(lm, x, y):
+def _annotate(lm, x_y):
     logger.info('Annotating...')
 
-    loss, top_layers = lm.run_epoch(x, y, is_training=False)
+    loss, top_layers = lm.run_epoch(x_y, is_training=False)
     logger.info('Perplexity: %f', _perplexity(loss))
 
     return np.concatenate(top_layers, axis=0)
@@ -322,28 +333,30 @@ def _main():
     if args.train and args.test is None:
         logger.info('Splitting training data into training and test sets')
         training_data, test_data = model_selection.train_test_split(
-            data.read_file(args.train[0]),
+            list(data.read_path(args.train[0])),
             test_size=0.1)
     else:
-        training_data = data.read_file(args.train[0]) if args.train else []
-        test_data = data.read_file(args.test) if args.test else []
+        training_data = data.read_path(args.train[0]) if args.train else None
+        test_data = data.read_path(args.test) if args.test else None
 
     if args.validate:
-        dev_data = data.read_file(args.validate)
+        dev_data = data.read_path(args.validate)
     elif args.validate is None:
         logger.info('Splitting training data into training and dev sets')
         training_data, dev_data = model_selection.train_test_split(
-            training_data,
+            list(training_data),
             test_size=0.1)
     else:
-        dev_data = []
+        dev_data = None
+
+    training_data, vocab_data = itertools.tee(training_data)
 
     # Build (or load) the vocabulary
     v = vocab.Vocabulary()
     if args.load_vocab:
         v.load(args.load_vocab)
     else:
-        v.build(training_data)
+        v.build(vocab_data)
         if args.save_vocab:
             v.save(args.save_vocab)
 
@@ -381,32 +394,37 @@ def _main():
                 lm.preload_word_embeddings(args.embeddings, v, config['lstm']['hidden_dims'])
 
             if args.train:
-                x_train, y_train = data.batch_data(training_data,
+                train_batches = data.batch_data(training_data,
                         batch_size=config['data']['batch_size'],
                         num_steps=config['data']['num_steps'])
-                x_dev, y_dev = data.batch_data(dev_data,
-                        batch_size=config['data']['batch_size'],
-                        num_steps=config['data']['num_steps'])
-                _train(lm, x_train, y_train, x_dev, y_dev, args.save,
+
+                if dev_data:
+                    dev_batches = data.batch_data(dev_data,
+                            batch_size=config['data']['batch_size'],
+                            num_steps=config['data']['num_steps'])
+                else:
+                    dev_batches = None
+
+                _train(lm, train_batches, dev_batches, args.save,
                        num_epochs=config['training']['num_epochs'],
                        terminate_after=config['training']['terminate_after'],
                        learning_rate_decay=config['training']['learning_rate_decay'],
                        decay_after=config['training']['decay_after'])
 
             if args.test is not False:
-                x_test, y_test = data.batch_data(test_data,
+                test_batches = data.batch_data(test_data,
                         batch_size=config['data']['batch_size'],
                         num_steps=config['data']['num_steps'])
-                _test(lm, x_test, y_test)
+                _test(lm, test_batches)
 
             if args.annotate is not False:
                 input_path, output_path = args.annotate
                 token_label_pairs = annotate.read_file(input_path)
                 to_annotate = v.to_ids(annotate.pairs_to_lm_format(token_label_pairs))
-                x_ann, y_ann = data.batch_data(to_annotate,
+                to_annotate_batches = data.batch_data(to_annotate,
                         batch_size=config['data']['batch_size'],
                         num_steps=config['data']['num_steps'])
-                top_layers = _annotate(lm, x_ann, y_ann)
+                top_layers = _annotate(lm, to_annotate_batches)
 
                 annotate.write_file(output_path, token_label_pairs, top_layers,
                                     config['lstm']['hidden_dims'])

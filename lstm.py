@@ -349,13 +349,12 @@ def _main():
     else:
         dev_data = None
 
-    training_data, vocab_data = itertools.tee(training_data)
-
     # Build (or load) the vocabulary
     v = vocab.Vocabulary()
     if args.load_vocab:
         v.load(args.load_vocab)
     else:
+        training_data, vocab_data = itertools.tee(training_data)
         v.build(vocab_data)
         if args.save_vocab:
             v.save(args.save_vocab)

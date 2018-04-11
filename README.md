@@ -1,5 +1,5 @@
 # tf-lstm-lm
-A Tensorflow implementation of a undirectional, multilayer LSTM language model,
+A Tensorflow implementation of a unidirectional, multilayer LSTM language model,
 loosely following Zaremba et al., 2014 [1].
 
 After training a model, it can be used to annotate text with

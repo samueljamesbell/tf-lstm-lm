@@ -1,5 +1,5 @@
-# tf-lstm-lm
-
+tf-lstm-lm
+===
 A Tensorflow implementation of a undirectional, multilayer LSTM language model,
 loosely following Zaremba et al., 2014 [1].
 
@@ -10,17 +10,20 @@ error detection or sequence labelling).
 I've taken heavy inspiration from [2, 3, 4]. In development, I used Mikolov's
 tokenised PTB dataset [5].
 
-## Dependencies
+Dependencies
+---
 * Python 3.6
 * pipenv
 
-## Setup
+Setup
+---
 ```
 pipenv install
 
 ```
 
-## Usage
+Usage
+---
 
 ### Training and evaluation
 ```
@@ -107,10 +110,11 @@ pipenv run python lstm.py conf/test.yaml
     --annotate data/input.tsv data/output.tsv
 ```
 
-## References
-[1] [Zaremba, W., Sutskever, I., & Vinyals, O. (2014). Recurrent neural network regularization.](https://arxiv.org/abs/1409.2329)
-[2] [https://github.com/wpm/tfrnnlm/](https://github.com/wpm/tfrnnlm/)
-[3] [https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/](https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/)
-[4] [https://www.tensorflow.org/tutorials/recurrent](https://www.tensorflow.org/tutorials/recurrent)
-[5] [http://www.fit.vutbr.cz/~imikolov/rnnlm/](http://www.fit.vutbr.cz/~imikolov/rnnlm/)
+References
+---
+* [1] [Zaremba, W., Sutskever, I., & Vinyals, O. (2014). Recurrent neural network regularization.](https://arxiv.org/abs/1409.2329)
+* [2] [https://github.com/wpm/tfrnnlm/](https://github.com/wpm/tfrnnlm/)
+* [3] [https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/](https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/)
+* [4] [https://www.tensorflow.org/tutorials/recurrent](https://www.tensorflow.org/tutorials/recurrent)
+* [5] [http://www.fit.vutbr.cz/~imikolov/rnnlm/](http://www.fit.vutbr.cz/~imikolov/rnnlm/)
 

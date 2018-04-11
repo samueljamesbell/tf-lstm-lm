@@ -1,5 +1,4 @@
-tf-lstm-lm
-===
+# tf-lstm-lm
 A Tensorflow implementation of a undirectional, multilayer LSTM language model,
 loosely following Zaremba et al., 2014 [1].
 
@@ -10,22 +9,17 @@ error detection or sequence labelling).
 I've taken heavy inspiration from [2, 3, 4]. In development, I used Mikolov's
 tokenised PTB dataset [5].
 
-Dependencies
----
+## Dependencies
 * Python 3.6
 * pipenv
 
-Setup
----
+## Setup
 ```
 pipenv install
-
 ```
 
-Usage
----
-
-### Training and evaluation
+## Usage
+### Training and evaluation
 ```
 pipenv run python lstm.py conf/test.yaml
     --train data/ptb.train.txt
@@ -42,7 +36,7 @@ pipenv run python lstm.py conf/test.yaml
     --test
 ```
 
-### Streaming
+### Streaming
 For large datasets, it might be useful to stream shards of data from disk. To
 do so, pass a wildcard path:
 
@@ -55,7 +49,7 @@ pipenv run python lstm.py conf/test.yaml
 Note that it is not possible to split streams into dev and test sets: you'll
 need to specify files or paths if you wish to validate and test.
 
-### Saving and loading
+### Saving and loading
 To save a model:
 ```
 pipenv run python lstm.py conf/test.yaml
@@ -110,8 +104,7 @@ pipenv run python lstm.py conf/test.yaml
     --annotate data/input.tsv data/output.tsv
 ```
 
-References
----
+## References
 * [1] [Zaremba, W., Sutskever, I., & Vinyals, O. (2014). Recurrent neural network regularization.](https://arxiv.org/abs/1409.2329)
 * [2] [https://github.com/wpm/tfrnnlm/](https://github.com/wpm/tfrnnlm/)
 * [3] [https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/](https://github.com/tensorflow/models/blob/master/tutorials/rnn/ptb/)

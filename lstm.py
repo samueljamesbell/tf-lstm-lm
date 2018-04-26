@@ -289,7 +289,8 @@ def _train(lm, train_x_y, dev_x_y=None, save_path=None,
 
         if dev_x_y:
             loss, _ = lm.run_epoch(dev_x_y_actual, is_training=False)
-            logger.info('Validation perplexity: %f', _perplexity(loss))
+            perplexity = _perplexity(loss)
+            logger.info('Validation perplexity: %f', perplexity)
 
         if perplexity - best_epoch_score < -1:
             logger.info('Best epoch updated to: %d', epoch)

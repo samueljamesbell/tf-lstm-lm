@@ -4,6 +4,7 @@ import itertools
 import logging
 import math
 import random
+import time
 
 import numpy as np
 from sklearn import model_selection
@@ -22,7 +23,6 @@ logging.basicConfig(level=logging.INFO)
 # TODO:
 # -----
 # Toggle LSTM direction (forward or backward)
-# Annotate with more than just final LSTM output layer
 # Clean up session management
 
 
@@ -41,6 +41,11 @@ def _parse_args():
     parser.add_argument('--annotate', nargs=2, default=False,
                         help='Paths to error detection files. '
                              'First path is input, second is output.')
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--time', dest='time', action='store_true')
+    group.add_argument('--no-time', dest='time', action='store_false')
+    group.set_defaults(time=False)
 
     parser.add_argument('--save', help='Path to save checkpoint')
     parser.add_argument('--save_vocab', help='Path to save vocab file')
@@ -187,7 +192,7 @@ class LanguageModel(object):
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars),
                                           max_gradient_norm)
-        optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
         self.optimise = optimizer.apply_gradients(
                 zip(grads, tvars),
                 global_step=tf.train.get_or_create_global_step())
@@ -268,24 +273,34 @@ class LanguageModel(object):
 
 
 def _train(lm, train_x_y, dev_x_y=None, save_path=None,
-           num_epochs=10, terminate_after=5, learning_rate_decay=1.0, decay_after=None):
+           num_epochs=10, terminate_after=5, learning_rate_decay=1.0,
+           decay_after=None, time_epochs=False):
     logger.info('Training...')
     best_epoch = 0
     best_epoch_score = math.inf
     num_epochs_without_improvement = 0
     for epoch in range(num_epochs):
+        start_time = time.time() if time_epochs else None
+
         train_x_y, train_x_y_actual = itertools.tee(train_x_y)
         dev_x_y, dev_x_y_actual = itertools.tee(dev_x_y) if dev_x_y else (None, None)
 
         logger.info('Epoch: %d', epoch)
 
         # Assume an initial learning rate of 1.0, implicit in this calculation
-        learning_rate = learning_rate_decay ** max(epoch + 1 - decay_after, 0.0)
+        if decay_after:
+            learning_rate = learning_rate_decay ** max(epoch + 1 - decay_after, 0.0)
+        else:
+            learning_rate = 0.001
+
         logger.info('Learning rate: %f', learning_rate)
 
         loss, _ = lm.run_epoch(train_x_y_actual, learning_rate=learning_rate, is_training=True)
         perplexity = _perplexity(loss)
         logger.info('Training perplexity: %f', perplexity)
+
+        if time_epochs:
+            logger.info('Training epoch took %d seconds', time.time() - start_time)
 
         if dev_x_y:
             loss, _ = lm.run_epoch(dev_x_y_actual, is_training=False)
@@ -409,7 +424,8 @@ def _main():
                        num_epochs=config['training']['num_epochs'],
                        terminate_after=config['training']['terminate_after'],
                        learning_rate_decay=config['training']['learning_rate_decay'],
-                       decay_after=config['training']['decay_after'])
+                       decay_after=config['training']['decay_after'],
+                       time_epochs=args.time)
 
             if args.test is not False:
                 test_batches = data.batch_data(test_data,

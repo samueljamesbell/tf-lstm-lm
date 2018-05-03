@@ -287,8 +287,8 @@ def _train(lm, train_x_y, dev_x_y=None, save_path=None,
 
         logger.info('Epoch: %d', epoch)
 
-        # Assume an initial learning rate of 1.0, implicit in this calculation
         if decay_after:
+            # Assume an initial learning rate of 1.0, implicit in this calculation
             learning_rate = learning_rate_decay ** max(epoch + 1 - decay_after, 0.0)
         else:
             learning_rate = 0.001
@@ -371,7 +371,7 @@ def _main():
         v.load(args.load_vocab)
     else:
         training_data, vocab_data = itertools.tee(training_data)
-        v.build(vocab_data)
+        v.build(vocab_data, max_size=config['vocab']['max_size'])
         if args.save_vocab:
             v.save(args.save_vocab)
 
@@ -412,6 +412,7 @@ def _main():
                 train_batches = data.batch_data(training_data,
                         batch_size=config['data']['batch_size'],
                         num_steps=config['data']['num_steps'])
+
 
                 if dev_data:
                     dev_batches = data.batch_data(dev_data,

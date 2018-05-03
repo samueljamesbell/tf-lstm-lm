@@ -39,11 +39,8 @@ def batch_data(data, batch_size=20, num_steps=35):
     (batch_size x num_steps) matrix of data, and y is a matrix of labels with
     the same dimensions.
     """
-    start_index = 0
     while True:
-        end_index = start_index + (batch_size * num_steps)
-
-        slice_of_tokens = list(itertools.islice(data, start_index, end_index))
+        slice_of_tokens = list(itertools.islice(data, 0, batch_size * num_steps))
 
         if len(slice_of_tokens) != (batch_size * num_steps):
             # TODO: This does mean we might break before processing the
@@ -56,8 +53,6 @@ def batch_data(data, batch_size=20, num_steps=35):
         y = np.reshape(shift, (batch_size, num_steps))
 
         yield x, y
-
-        start_index += end_index
 
 
 def preprocess_text(text):

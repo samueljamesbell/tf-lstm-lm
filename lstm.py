@@ -134,7 +134,7 @@ class LanguageModel(object):
         # (vocab size x hidden dims)
         self.word_embeddings = tf.get_variable(
                 "word_embeddings",
-                shape=[self.vocab_size, hidden_dims])
+                shape=[self.vocab_size, projection_dims or hidden_dims])
 
         # (batch size x num steps x embedding dims)
         input_tensor = tf.nn.embedding_lookup(self.word_embeddings, self.word_ids)
@@ -157,6 +157,7 @@ class LanguageModel(object):
 
         cell =  tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
 
+
         cell = tf.contrib.rnn.MultiRNNCell(
                 [cell for _ in range(num_layers)],
                 state_is_tuple=True)
@@ -170,7 +171,7 @@ class LanguageModel(object):
                 initial_state=self.initial_state)
 
         # ((batch size * num steps) x hidden dims) 
-        output_tensor = tf.reshape(tf.concat(outputs, 1), [-1, hidden_dims])
+        output_tensor = tf.reshape(tf.concat(outputs, 1), [-1, projection_dims or hidden_dims])
         self.top_layer = output_tensor
 
         # ((batch size * num steps) x vocab) 

@@ -124,7 +124,7 @@ class LanguageModel(object):
         self.optimise = None
 
     def construct_network(self, hidden_dims, num_layers, dropout_keep_prob,
-                          max_gradient_norm):
+                          max_gradient_norm, projection_dims):
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
 
         # (batch size x num steps)
@@ -150,8 +150,9 @@ class LanguageModel(object):
 
         inputs = tf.unstack(input_tensor, num=self.num_steps, axis=1)
 
-        cell = tf.contrib.rnn.LSTMBlockCell(
+        cell = tf.contrib.rnn.LSTMCell(
                 hidden_dims,
+                num_proj=projection_dims
                 forget_bias=0.0)
 
         cell =  tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
@@ -385,7 +386,8 @@ def _main():
             hidden_dims=config['lstm']['hidden_dims'],
             num_layers=config['lstm']['num_layers'],
             dropout_keep_prob=config['lstm']['dropout']['keep_prob'],
-            max_gradient_norm=config['lstm']['max_gradient_norm'])
+            max_gradient_norm=config['lstm']['max_gradient_norm'],
+            projection_dims=config['lstm'].get('projection_dims'))
 
     training_data = v.to_ids(training_data)
     dev_data = v.to_ids(dev_data)

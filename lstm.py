@@ -152,7 +152,7 @@ class LanguageModel(object):
 
         cell = tf.contrib.rnn.LSTMCell(
                 hidden_dims,
-                num_proj=projection_dims
+                num_proj=projection_dims,
                 forget_bias=0.0)
 
         cell =  tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)

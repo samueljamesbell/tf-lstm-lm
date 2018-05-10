@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 _UNKNOWN = '<unk>'
-_MAX_TOKENS_TO_CONSIDER = 100000
+_MAX_TOKENS_TO_CONSIDER = 10000000
 
 
 class Vocabulary(object):

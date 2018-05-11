@@ -32,7 +32,7 @@ def read_path(path):
     return itertools.chain.from_iterable(read(p) for p in glob.glob(path))
 
 
-def batch_data(data, batch_size=20, num_steps=35):
+def batch_data(data, batch_size=20, num_steps=35, pad=None):
     """Batch data into processable chunks.
 
     Returns a generator of (x, y) tuples, where each x is a
@@ -42,10 +42,15 @@ def batch_data(data, batch_size=20, num_steps=35):
     while True:
         slice_of_tokens = list(itertools.islice(data, 0, batch_size * num_steps))
 
-        if len(slice_of_tokens) != (batch_size * num_steps):
-            # TODO: This does mean we might break before processing the
-            # remnants of the last batch, if it doesn't evenly divide. Perhaps
-            # we should use some padding?
+        if pad:
+            if not slice_of_tokens:
+                break
+
+            slice_of_tokens = [
+                (slice_of_tokens[i] if i < len(slice_of_tokens) else pad)
+                for i in range(batch_size * num_steps)
+            ]
+        elif len(slice_of_tokens) != (batch_size * num_steps):
             break
 
         shift = slice_of_tokens[1:] + [slice_of_tokens[0]]

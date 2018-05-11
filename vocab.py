@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 _UNKNOWN = '<unk>'
+_PAD = '<pad>'
 _MAX_TOKENS_TO_CONSIDER = 10000000
 
 
@@ -21,6 +22,10 @@ class Vocabulary(object):
     @property
     def size(self):
         return len(self._vocab)
+
+    @property
+    def pad_id(self):
+        return self._vocab[_PAD]
 
     def __contains__(self, token):
         return token in self._vocab
@@ -37,6 +42,9 @@ class Vocabulary(object):
         # Force unk to be in vocab if not already
         if _UNKNOWN not in self._vocab:
             self._vocab[_UNKNOWN] = len(self._vocab)
+
+        # Add pad to vocab
+        self._vocab[_PAD] = len(self._vocab)
 
         self._vocab_inverse = _inverse(self._vocab)
 

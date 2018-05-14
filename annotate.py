@@ -5,16 +5,13 @@ import data
 
 def read_file(path):
     with open(path, 'r', encoding='utf-8') as f:
-        pairs = []
         for line in f:
             if line.strip():
                 token, label = line.strip().split('\t')
             else:
                 token, label = None, None
 
-            pairs.append((token, label))
-
-    return pairs
+            yield token, label
 
 
 def pairs_to_lm_format(pairs):

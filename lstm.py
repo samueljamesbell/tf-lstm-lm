@@ -169,7 +169,6 @@ class LanguageModel(object):
                 initial_state=self.initial_state)
 
         output_tensor = tf.reshape(tf.stack(outputs, axis=1), [-1, projection_dims or hidden_dims])
-        print(output_tensor)
 
         # ((batch size * num steps) x hidden dims) 
         self.top_layer = output_tensor
@@ -177,48 +176,23 @@ class LanguageModel(object):
         # (batch size x num steps x vocab) 
         logits = tf.layers.dense(output_tensor, self.vocab_size,
                                  name='project_onto_vocab')
-        print(logits)
-        print(self.label_ids)
 
         label_ids = tf.squeeze(tf.reshape(self.label_ids, [-1, 1]), squeeze_dims=[1]) 
-        print(label_ids)
 
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=logits,
                 labels=label_ids)
-        print(loss)
-
-#        loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-#                logits=logits,
-#                labels=self.label_ids)
-
-#        loss = tf.contrib.seq2seq.sequence_loss(
-#                logits=logits,
-#                targets=self.label_ids,
-#                weights=tf.ones([self.batch_size, self.num_steps], dtype=tf.float32),
-#                average_across_timesteps=False,
-#                average_across_batch=True)
-
-        print(loss)
 
         self.loss = tf.reduce_mean(loss)
 
-        print(self.loss)
-
-
         self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
-        optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
 
-#        gradients, variables = zip(*optimizer.compute_gradients(self.loss * self.num_steps))
-#        gradients, _ = tf.clip_by_global_norm(gradients, max_gradient_norm)
-#        self.optimise = optimizer.apply_gradients(zip(gradients, variables))
-
-#        self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss *
             self.num_steps, tvars), max_gradient_norm)
-#        optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
-        optimizer = tf.train.AdagradOptimizer(self.learning_rate)
+
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+
         self.optimise = optimizer.apply_gradients(
                 zip(grads, tvars),
                 global_step=tf.train.get_or_create_global_step())

@@ -123,13 +123,13 @@ class LanguageModel(object):
         self.learning_rate = None
         self.optimise = None
 
-    def construct_network(self, hidden_dims, num_layers, dropout_keep_prob,
-                          max_gradient_norm, projection_dims):
+    def construct_network(self, hidden_dims, num_layers,
+                          dropout_keep_prob, max_gradient_norm, projection_dims):
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
 
         # (batch size x num steps)
-        self.word_ids = tf.placeholder(tf.int32, [None, None], name="word_ids")
-        self.label_ids = tf.placeholder(tf.int32, [None, None], name="label_ids")
+        self.word_ids = tf.placeholder(tf.int32, [self.batch_size, self.num_steps], name="word_ids")
+        self.label_ids = tf.placeholder(tf.int32, [self.batch_size, self.num_steps], name="label_ids")
 
         # (vocab size x hidden dims)
         self.word_embeddings = tf.get_variable(
@@ -147,8 +147,7 @@ class LanguageModel(object):
                 lambda: tf.constant(1.0))
 
         input_tensor = tf.nn.dropout(input_tensor, dropout_keep_prob)
-
-        inputs = tf.unstack(input_tensor, num=self.num_steps, axis=1)
+        inputs = tf.unstack(input_tensor, axis=1)
 
         cell = tf.contrib.rnn.LSTMCell(
                 hidden_dims,
@@ -156,7 +155,6 @@ class LanguageModel(object):
                 forget_bias=0.0)
 
         cell =  tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
-
 
         cell = tf.contrib.rnn.MultiRNNCell(
                 [cell for _ in range(num_layers)],
@@ -170,31 +168,57 @@ class LanguageModel(object):
                 dtype=tf.float32,
                 initial_state=self.initial_state)
 
+        output_tensor = tf.reshape(tf.stack(outputs, axis=1), [-1, projection_dims or hidden_dims])
+        print(output_tensor)
+
         # ((batch size * num steps) x hidden dims) 
-        output_tensor = tf.reshape(tf.concat(outputs, 1), [-1, projection_dims or hidden_dims])
         self.top_layer = output_tensor
 
-        # ((batch size * num steps) x vocab) 
+        # (batch size x num steps x vocab) 
         logits = tf.layers.dense(output_tensor, self.vocab_size,
                                  name='project_onto_vocab')
+        print(logits)
+        print(self.label_ids)
 
-        # (batch size x num steps x vocab)
-        logits = tf.reshape(logits, [self.batch_size, self.num_steps, self.vocab_size])
+        label_ids = tf.squeeze(tf.reshape(self.label_ids, [-1, 1]), squeeze_dims=[1]) 
+        print(label_ids)
 
-        loss = tf.contrib.seq2seq.sequence_loss(
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=logits,
-                targets=self.label_ids,
-                weights=tf.ones([self.batch_size, self.num_steps], dtype=tf.float32),
-                average_across_timesteps=False,
-                average_across_batch=True)
+                labels=label_ids)
+        print(loss)
 
-        self.loss = tf.reduce_sum(loss)
+#        loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+#                logits=logits,
+#                labels=self.label_ids)
+
+#        loss = tf.contrib.seq2seq.sequence_loss(
+#                logits=logits,
+#                targets=self.label_ids,
+#                weights=tf.ones([self.batch_size, self.num_steps], dtype=tf.float32),
+#                average_across_timesteps=False,
+#                average_across_batch=True)
+
+        print(loss)
+
+        self.loss = tf.reduce_mean(loss)
+
+        print(self.loss)
+
 
         self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
-        tvars = tf.trainable_variables()
-        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars),
-                                          max_gradient_norm)
         optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+
+#        gradients, variables = zip(*optimizer.compute_gradients(self.loss * self.num_steps))
+#        gradients, _ = tf.clip_by_global_norm(gradients, max_gradient_norm)
+#        self.optimise = optimizer.apply_gradients(zip(gradients, variables))
+
+#        self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
+        tvars = tf.trainable_variables()
+        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss *
+            self.num_steps, tvars), max_gradient_norm)
+#        optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+        optimizer = tf.train.AdagradOptimizer(self.learning_rate)
         self.optimise = optimizer.apply_gradients(
                 zip(grads, tvars),
                 global_step=tf.train.get_or_create_global_step())
@@ -250,8 +274,7 @@ class LanguageModel(object):
     def run_epoch(self, x_y, learning_rate=1.0, is_training=False):
         state = self.session.run(self.initial_state)
 
-        cost = 0.0
-        iters = 0
+        losses = []
         top_layers = []
         for x_batch, y_batch in x_y:
             feed = {
@@ -266,12 +289,10 @@ class LanguageModel(object):
                 feed[h] = state[i].h
 
             c, state, top_layer = self.run_batch(feed, is_training)
+            losses.append(c)
             top_layers.append(top_layer)
 
-            cost += c
-            iters += self.num_steps
-        
-        return cost / iters, top_layers
+        return np.mean(losses), top_layers
 
 
 def _train(lm, train_x_y, dev_x_y=None, save_path=None,
@@ -443,7 +464,8 @@ def _main():
                 to_annotate = v.to_ids(annotate.pairs_to_lm_format(token_label_pairs))
                 to_annotate_batches = data.batch_data(to_annotate,
                         batch_size=config['data']['batch_size'],
-                        num_steps=config['data']['num_steps'])
+                        num_steps=config['data']['num_steps'],
+                        pad=v.pad_id)
                 top_layers = _annotate(lm, to_annotate_batches)
 
                 annotate.write_file(output_path, token_label_pairs, top_layers,
